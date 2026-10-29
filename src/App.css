@@ -1,0 +1,11 @@
+.home {
+  max-width: 640px;
+  margin: 4rem auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.status {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
