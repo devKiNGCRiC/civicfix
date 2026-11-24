@@ -9,7 +9,7 @@ function App() {
   useEffect(() => {
     fetch("/api/health")
       .then((res) => res.json() as Promise<Health>)
-      .then((data) => setApiStatus(data.status))
+      .then(() => setApiStatus(404))
       .catch(() => setApiStatus("unreachable"));
   }, []);
 
