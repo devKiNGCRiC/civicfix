@@ -1,0 +1,72 @@
+# ================================================================
+# CI (Continuous Integration) workflow for CivicFix
+# GitHub reads every .yml file in .github/workflows/ and runs it
+# automatically on its own servers when the "on:" events happen.
+# ================================================================
+
+# The name shown in the "Actions" tab and on pull requests
+name: CI
+
+# WHEN to run this workflow
+on:
+  # Every pull request that wants to merge into main
+  pull_request:
+    branches: [main]
+  # Every time main changes (that is, after a merge)
+  push:
+    branches: [main]
+
+# The workflow only needs to READ the code, nothing more.
+# Giving the smallest permission needed is a good security habit.
+permissions:
+  contents: read
+
+# If you push again to the same PR while a check is still running,
+# cancel the old run and only check the newest code.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# A workflow is made of one or more "jobs". We have one.
+jobs:
+  check:
+    # This name becomes the checks's name on pull requests.
+    # We will select it later in the branch-protection ruleset.
+    name: Lint and Build
+
+    # Run on a fresh Ubuntu virtual machine provided free by Github
+    runs-on: ubuntu-latest
+
+    # Stop the job if something hangs for more than 10 minutes
+    timeout-minutes: 10
+
+    # The steps run one after another, top to bottom.
+    # If any step fails, the job stops and the check turns red.
+    steps:
+      # 1. Download the repository's code onto the virtual machine
+      - name: Check out the code
+        uses: actions/checkout@v6
+
+      # 2. Install Node.js 24 (the same major version in all system)
+      #    "cache : npm" saves downloaded packages between runs,
+      #    so later runs install faster.
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      # 3. Install the exact package versions from package-lock.json.
+      #    "npm ci" (clean install) is made for CI: it never changes
+      #     the lock file, and it fails if package.json and the lock file disagree.
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Check the code style and common mistakes with ESLint
+      - name: Lint
+        run: npm run lint
+
+      # 5. Type-check with TypeScript and build app.
+      #    If the code has a type error, this step fails
+      - name: Build
+        run: npm run build
